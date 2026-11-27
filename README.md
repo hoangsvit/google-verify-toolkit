@@ -6,9 +6,16 @@ A modern browser extension for Google account verification guidance and local di
 - Overview, Diagnostics and Settings with animated beUI buttons.
 - English and Vietnamese, light/dark/system themes.
 - On-demand detection of visible QR, SMS and voice options on Google Accounts.
+- Side Panel on Chrome, Edge and Firefox (browser support varies; Opera uses the popup).
+- Detect visible QR labels on headings and graphics, and the official “Try another way” option.
+- Per-tab badge counts detected methods after a manual scan and resets on navigation.
+- Guided verification instructions in English and Vietnamese.
 - Copy a redacted diagnostic report. No backend or account credentials.
 
 Detection is heuristic: a method not detected is not necessarily unavailable. The extension does not change the verification flow or guarantee that any method is offered.
+
+## Usage
+Open the Google Accounts page, invoke the extension from the browser toolbar, and select Check current page. If an alternative is shown, select it on Google's page. The extension does not click verification controls or decode QR payloads. Side panels use the same on-demand inspection; if access is unavailable after navigation, invoke the toolbar popup again. Badge counts are not account verification status.
 
 ## Development
 Requires Node.js 22+ and pnpm 10.
