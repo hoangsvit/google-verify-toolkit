@@ -43,5 +43,7 @@
   "navigation": "ナビゲーション",
   "autoLanguage": "ブラウザの既定値",
   "switchToLight": "ライトモードに切り替える",
-  "switchToDark": "ダークモードに切り替える"
+  "switchToDark": "ダークモードに切り替える",
+  "signupQrTitle": "アカウント作成時の QR 確認",
+  "signupQrHelp": "Google はアカウント作成前に端末確認を求めています。公式ページの QR コードをスマートフォンで読み取り、Google の指示に従ってからこのブラウザに戻ってください。SMS は Google が提供する場合のみ利用できます。"
 }

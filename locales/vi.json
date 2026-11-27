@@ -43,5 +43,7 @@
   "navigation": "Điều hướng",
   "autoLanguage": "Theo trình duyệt",
   "switchToLight": "Chuyển sang chế độ sáng",
-  "switchToDark": "Chuyển sang chế độ tối"
+  "switchToDark": "Chuyển sang chế độ tối",
+  "signupQrTitle": "Xác minh QR trước khi tạo tài khoản",
+  "signupQrHelp": "Google yêu cầu xác minh thiết bị trước khi tạo tài khoản. Dùng điện thoại quét mã QR trên trang Google, làm theo hướng dẫn rồi quay lại trình duyệt này. Chỉ sử dụng SMS nếu Google cung cấp lựa chọn đó."
 }

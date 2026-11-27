@@ -10,7 +10,7 @@ export async function inspectActiveTab(): Promise<Snapshot> {
   try {
     const [execution] = await browser.scripting.executeScript({target:{tabId:tab.id},func:inspectGoogleDocument});
     const result=execution?.result;
-    if(result) snapshot={page:'google',checked:true,alternative:result.alternative?'visible':'not-visible',methods:{qr:result.qr?'visible':'not-visible',sms:result.sms?'visible':'not-visible',voice:result.voice?'visible':'not-visible'}};
+    if(result) snapshot={page:'google',checked:true,signupQr:result.signupQr,alternative:result.alternative?'visible':'not-visible',methods:{qr:result.qr?'visible':'not-visible',sms:result.sms?'visible':'not-visible',voice:result.voice?'visible':'not-visible'}};
   } catch { return snapshot; }
   try {
     const current=await browser.tabs.get(tab.id);
