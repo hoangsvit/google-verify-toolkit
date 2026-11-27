@@ -43,5 +43,7 @@
   "navigation": "Navigation",
   "autoLanguage": "Browser default",
   "switchToLight": "Switch to light mode",
-  "switchToDark": "Switch to dark mode"
+  "switchToDark": "Switch to dark mode",
+  "signupQrTitle": "Account creation QR verification",
+  "signupQrHelp": "Google is asking you to verify your device before creating an account. Scan the QR code on the official page using your phone, follow Google's instructions, then return to this browser. SMS is only an option if Google offers it."
 }
