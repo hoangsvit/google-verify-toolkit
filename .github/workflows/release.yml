@@ -16,9 +16,24 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm zip
-      - run: pnpm zip:firefox
-      - run: gh release upload "$TAG" .output/*.zip
+      - name: Package Chromium
+        run: |
+          mkdir -p artifacts
+          pnpm zip
+          cp .output/*-chrome.zip artifacts/
+      - name: Package Firefox
+        run: |
+          pnpm zip:firefox
+          cp .output/*-firefox.zip .output/*-sources.zip artifacts/
+      - name: Verify ZIP contents
+        run: |
+          for archive in artifacts/*.zip; do
+            unzip -tq "$archive"
+          done
+          for archive in artifacts/*-chrome.zip artifacts/*-firefox.zip; do
+            unzip -p "$archive" manifest.json | python3 -m json.tool > /dev/null
+          done
+      - run: gh release upload "$TAG" artifacts/*.zip
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
