@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+}
+:root { color-scheme: light; --background:#f7f8fb; --foreground:#182132; --card:#ffffff; --muted:#eef1f6; --muted-foreground:#586579; --border:#dce2eb; --primary:#245dd8; --primary-foreground:#fff; }
+:root.dark { color-scheme: dark; --background:#111318; --foreground:#edf2fa; --card:#1b2029; --muted:#252c38; --muted-foreground:#a9b5c7; --border:#303948; --primary:#8ab4f8; --primary-foreground:#13223b; }
+body { margin:0; font-family:system-ui,sans-serif; background:var(--background); color:var(--foreground); }
+button,select,a { outline-offset:3px; }
+button:focus-visible,select:focus-visible,a:focus-visible { outline:2px solid var(--primary); }
