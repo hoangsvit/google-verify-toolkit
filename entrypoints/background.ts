@@ -1,3 +1,6 @@
+import { browser } from 'wxt/browser';
 export default defineBackground(() => {
-  // No persistent scanning, remote requests, or credential handling.
+  browser.tabs.onUpdated.addListener((tabId,change)=>{
+    if(change.status==='loading'||change.url) void browser.action.setBadgeText({tabId,text:''}).catch(()=>{});
+  });
 });

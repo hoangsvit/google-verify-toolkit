@@ -6,12 +6,84 @@
   --color-card: var(--card);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
+  --color-border: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
 }
-:root { color-scheme: light; --background:#f7f8fb; --foreground:#182132; --card:#ffffff; --muted:#eef1f6; --muted-foreground:#586579; --border:#dce2eb; --primary:#245dd8; --primary-foreground:#fff; }
-:root.dark { color-scheme: dark; --background:#111318; --foreground:#edf2fa; --card:#1b2029; --muted:#252c38; --muted-foreground:#a9b5c7; --border:#303948; --primary:#8ab4f8; --primary-foreground:#13223b; }
+:root {
+    /* Light mode — beUI Current. Adapted MIT tokens. */
+    --background: oklch(99% 0 0);
+    --foreground: oklch(15% 0 0);
+    --card: oklch(97% 0 0);
+    --muted-foreground: oklch(50% 0 0);
+    --border: oklch(15% 0 0 / 0.06);
+    /* beUI extensions (no shadcn equivalent). */
+    --border-strong: oklch(15% 0 0 / 0.12);
+    --accent-fg: oklch(15% 0 0);
+    --neon: oklch(80% 0.22 145);
+    --danger: oklch(62% 0.22 25);
+    --success: oklch(70% 0.18 155);
+    --warning: oklch(78% 0.18 75);
+    --glass-bg: oklch(99% 0 0 / 0.55);
+    --glass-border: oklch(15% 0 0 / 0.08);
+    --glass-strong-bg: rgb(255 255 255 / 0.7);
+    --glass-thin-bg: rgb(255 255 255 / 0.45);
+    --gradient-bg: linear-gradient(
+        135deg,
+        oklch(99% 0 0) 0%,
+        oklch(96% 0.008 210) 100%
+    );
+    /* shadcn semantic tokens, mapped onto the base. */
+    --card-foreground: var(--foreground);
+    --popover: var(--card);
+    --popover-foreground: var(--foreground);
+    /* Near-black emphasis; white in dark mode. */
+    --primary: #171717;
+    --primary-foreground: #fafafa;
+    --secondary: var(--card);
+    --secondary-foreground: var(--foreground);
+    --muted: var(--card);
+    --accent: oklch(72% 0.18 195);
+    --accent-foreground: var(--accent-fg);
+    --destructive: var(--danger);
+    --input: var(--border);
+    --ring: var(--border-strong);
+}
+
+/* Dark mode — beUI Current. Semantic tokens follow the base via var(). */
+.dark {
+    --background: #151515;
+    --foreground: oklch(96% 0 0);
+    --card: #1c1c1c;
+    --muted-foreground: oklch(62% 0 0);
+    --border: rgb(255 255 255 / 0.05);
+    --border-strong: rgb(255 255 255 / 0.1);
+    --accent: oklch(80% 0.18 195);
+    --accent-fg: #151515;
+    --primary: #f5f5f5;
+    --primary-foreground: #151515;
+    --glass-bg: rgb(28 28 28 / 0.55);
+    --glass-border: rgb(255 255 255 / 0.08);
+    --glass-strong-bg: rgb(28 28 28 / 0.6);
+    --glass-thin-bg: rgb(21 21 21 / 0.45);
+    --gradient-bg: linear-gradient(
+        135deg,
+        oklch(19% 0 0) 0%,
+        oklch(22% 0.008 210) 100%
+    );
+}
+
+:root { color-scheme:light; }
+:root.dark { color-scheme:dark; }
 body { margin:0; font-family:system-ui,sans-serif; background:var(--background); color:var(--foreground); }
 button,select,a { outline-offset:3px; }
 button:focus-visible,select:focus-visible,a:focus-visible { outline:2px solid var(--primary); }
+
+html[data-beui-vt="circle"]::view-transition-old(root){animation:none;mix-blend-mode:normal}
+html[data-beui-vt="circle"]::view-transition-new(root){mix-blend-mode:normal;animation:beui-circle-reveal 400ms cubic-bezier(.4,0,.2,1)}
+@keyframes beui-circle-reveal {from{clip-path:circle(0% at 92% 5%)}to{clip-path:circle(150% at 92% 5%)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+button:not(:disabled),select:not(:disabled){cursor:pointer}
