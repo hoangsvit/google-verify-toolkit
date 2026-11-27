@@ -7,8 +7,7 @@ export default defineConfig({
     name: 'Google Verify Toolkit',
     description: 'Local Google account verification guidance and diagnostics.',
     permissions: ['activeTab', 'scripting', 'storage'],
-    icons: { 128: 'icon.svg' },
-    action: { default_title: 'Google Verify Toolkit' },
+    icons: { 128: 'icon.png' },
   },
   vite: () => ({ plugins: [tailwindcss()] }),
 });
