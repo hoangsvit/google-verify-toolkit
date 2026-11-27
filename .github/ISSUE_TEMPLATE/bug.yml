@@ -1,0 +1,16 @@
+name: Bug report
+description: Report a problem without sensitive account information
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description and steps to reproduce
+      description: Do not include account details, phone numbers, QR codes, OTPs, cookies, or tokens.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and extension version
+    validations:
+      required: true
