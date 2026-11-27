@@ -1,16 +1,73 @@
-name: CI
+name: Validate and package extensions
 on:
   pull_request:
     branches: [dev, main]
   push:
     branches: [dev, main]
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
-  validate:
+  preview-start:
+    name: Show building status
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Hide stale downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PHASE: start
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          const {GITHUB_REPOSITORY:repo,GITHUB_RUN_ID:run,GITHUB_RUN_ATTEMPT:attempt,PR_NUMBER:pr,PR_HEAD:head,PHASE:phase,BUILD_RESULT:result,CHROME:chrome,EDGE:edge,OPERA:opera,FIREFOX:firefox}=process.env;
+          if(!/^\d+$/.test(pr)||!/^\d+$/.test(run)||!/^\d+$/.test(attempt)||! /^[\w.-]+\/[\w.-]+$/.test(repo)||!/^[a-f0-9]{40}$/.test(head)) throw Error('Invalid preview metadata');
+          const api=(...args)=>JSON.parse(execFileSync('gh',['api',...args],{encoding:'utf8'}));
+          const endpoint='repos/'+repo;
+          const isCurrent=()=>{const p=api(endpoint+'/pulls/'+pr);return p.state==='open'&&p.head.sha===head;};
+          if(!isCurrent()) process.exit(0);
+          const marker='<!-- google-verify-build-preview -->';
+          const comments=api(endpoint+'/issues/'+pr+'/comments?per_page=100','--paginate','--slurp').flat();
+          const existing=comments.filter(c=>c.user?.login==='github-actions[bot]'&&c.body?.includes(marker)).at(-1);
+          const last=existing?.body?.match(/<!-- preview-run:(\d+):(\d+) -->/);
+          if(last&&(BigInt(last[1])>BigInt(run)||(last[1]===run&&BigInt(last[2])>BigInt(attempt)))) process.exit(0);
+          const runUrl='https://github.com/'+repo+'/actions/runs/'+run;
+          const lines=['### Extension build preview','','Commit: '+String.fromCharCode(96)+head.slice(0,7)+String.fromCharCode(96),''];
+          const packages=[['Chrome / Brave / Vivaldi',chrome],['Microsoft Edge',edge],['Opera / Opera GX',opera],['Firefox (unsigned)',firefox]];
+          if(phase==='start') lines.push('⏳ **Building and testing…**','','Downloads will appear after all checks pass.');
+          else if(result==='success'&&packages.every(([,id])=>/^\d+$/.test(id||''))){
+           lines.push('✅ **Build and tests passed**','','| Browser | Download |','| --- | --- |');
+           for(const [label,id] of packages) lines.push('| '+label+' | [Download ZIP]('+runUrl+'/artifacts/'+id+') |');
+           lines.push('','GitHub login may be required. Extract the ZIP once, then load the directory containing manifest.json. Firefox is unsigned and intended for temporary testing. Artifacts expire after 7 days.');
+          }else lines.push('❌ **Build did not pass or artifacts are missing.**','','Downloads withheld. Check the run log.');
+          lines.push('','[View build log]('+runUrl+')','',marker,'<!-- preview-run:'+run+':'+attempt+' -->');
+          if(!isCurrent()) process.exit(0);
+          const args=['-f','body='+lines.join('\n')];
+          if(existing) api(endpoint+'/issues/comments/'+existing.id,'-X','PATCH',...args);
+          else api(endpoint+'/issues/'+pr+'/comments','-X','POST',...args);
+          NODE
+  validate:
+    name: Type Check, Test & Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      chrome: ${{ steps.chrome.outputs.artifact-id }}
+      edge: ${{ steps.edge.outputs.artifact-id }}
+      opera: ${{ steps.opera.outputs.artifact-id }}
+      firefox: ${{ steps.firefox.outputs.artifact-id }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -18,27 +75,95 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm build
-      - run: pnpm build:firefox
-      - name: Package Chromium
+      - name: Build and validate all browsers
         run: |
-          mkdir -p artifacts
-          pnpm zip
-          cp .output/*-chrome.zip artifacts/
-      - name: Package Firefox
-        run: |
-          pnpm zip:firefox
-          cp .output/*-firefox.zip .output/*-sources.zip artifacts/
-      - name: Verify ZIP contents
-        run: |
-          for archive in artifacts/*.zip; do
-            unzip -tq "$archive"
+          set -euo pipefail
+          for browser in chrome edge opera firefox; do
+            pnpm exec wxt build -b "$browser" --mv3
+            node scripts/check-manifest.mjs "$browser"
           done
-          for archive in artifacts/*-chrome.zip artifacts/*-firefox.zip; do
-            unzip -p "$archive" manifest.json | python3 -m json.tool > /dev/null
-          done
-      - uses: actions/upload-artifact@v4
+      - name: Upload chrome package
+        id: chrome
+        uses: actions/upload-artifact@v4
         with:
-          name: extension-zips
-          path: artifacts/*.zip
+          name: google-verify-toolkit-chrome
+          path: .output/chrome-mv3/
+          include-hidden-files: true
           if-no-files-found: error
+          retention-days: 7
+      - name: Upload edge package
+        id: edge
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-verify-toolkit-edge
+          path: .output/edge-mv3/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload opera package
+        id: opera
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-verify-toolkit-opera
+          path: .output/opera-mv3/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload firefox package
+        id: firefox
+        uses: actions/upload-artifact@v4
+        with:
+          name: google-verify-toolkit-firefox
+          path: .output/firefox-mv3/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+  preview-finish:
+    name: Publish validated build downloads
+    needs: [preview-start, validate]
+    if: ${{ always() && !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Update PR preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PHASE: finish
+          BUILD_RESULT: ${{ needs.validate.result }}
+          CHROME: ${{ needs.validate.outputs.chrome }}
+          EDGE: ${{ needs.validate.outputs.edge }}
+          OPERA: ${{ needs.validate.outputs.opera }}
+          FIREFOX: ${{ needs.validate.outputs.firefox }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { execFileSync } from 'node:child_process';
+          const {GITHUB_REPOSITORY:repo,GITHUB_RUN_ID:run,GITHUB_RUN_ATTEMPT:attempt,PR_NUMBER:pr,PR_HEAD:head,PHASE:phase,BUILD_RESULT:result,CHROME:chrome,EDGE:edge,OPERA:opera,FIREFOX:firefox}=process.env;
+          if(!/^\d+$/.test(pr)||!/^\d+$/.test(run)||!/^\d+$/.test(attempt)||! /^[\w.-]+\/[\w.-]+$/.test(repo)||!/^[a-f0-9]{40}$/.test(head)) throw Error('Invalid preview metadata');
+          const api=(...args)=>JSON.parse(execFileSync('gh',['api',...args],{encoding:'utf8'}));
+          const endpoint='repos/'+repo;
+          const isCurrent=()=>{const p=api(endpoint+'/pulls/'+pr);return p.state==='open'&&p.head.sha===head;};
+          if(!isCurrent()) process.exit(0);
+          const marker='<!-- google-verify-build-preview -->';
+          const comments=api(endpoint+'/issues/'+pr+'/comments?per_page=100','--paginate','--slurp').flat();
+          const existing=comments.filter(c=>c.user?.login==='github-actions[bot]'&&c.body?.includes(marker)).at(-1);
+          const last=existing?.body?.match(/<!-- preview-run:(\d+):(\d+) -->/);
+          if(last&&(BigInt(last[1])>BigInt(run)||(last[1]===run&&BigInt(last[2])>BigInt(attempt)))) process.exit(0);
+          const runUrl='https://github.com/'+repo+'/actions/runs/'+run;
+          const lines=['### Extension build preview','','Commit: '+String.fromCharCode(96)+head.slice(0,7)+String.fromCharCode(96),''];
+          const packages=[['Chrome / Brave / Vivaldi',chrome],['Microsoft Edge',edge],['Opera / Opera GX',opera],['Firefox (unsigned)',firefox]];
+          if(phase==='start') lines.push('⏳ **Building and testing…**','','Downloads will appear after all checks pass.');
+          else if(result==='success'&&packages.every(([,id])=>/^\d+$/.test(id||''))){
+           lines.push('✅ **Build and tests passed**','','| Browser | Download |','| --- | --- |');
+           for(const [label,id] of packages) lines.push('| '+label+' | [Download ZIP]('+runUrl+'/artifacts/'+id+') |');
+           lines.push('','GitHub login may be required. Extract the ZIP once, then load the directory containing manifest.json. Firefox is unsigned and intended for temporary testing. Artifacts expire after 7 days.');
+          }else lines.push('❌ **Build did not pass or artifacts are missing.**','','Downloads withheld. Check the run log.');
+          lines.push('','[View build log]('+runUrl+')','',marker,'<!-- preview-run:'+run+':'+attempt+' -->');
+          if(!isCurrent()) process.exit(0);
+          const args=['-f','body='+lines.join('\n')];
+          if(existing) api(endpoint+'/issues/comments/'+existing.id,'-X','PATCH',...args);
+          else api(endpoint+'/issues/'+pr+'/comments','-X','POST',...args);
+          NODE
