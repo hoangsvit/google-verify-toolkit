@@ -7,10 +7,11 @@ import {emptySnapshot,diagnosticReport,type Method} from '../lib/verification';
 import type {Preferences} from '../lib/preferences';
 import {usePreferences} from '../lib/use-preferences';
 import {locales,languageNames} from '../locales';
+import {sandboxWords} from '../locales/sandbox';
 import {ThemeToggle} from './motion/theme-toggle';
 
 export function App({panel=false}:{panel?:boolean}){
- const {prefs,ready,t,update:save}=usePreferences();
+ const {prefs,ready,t,locale,update:save}=usePreferences();
  const [tab,setTab]=useState<'overview'|'diagnostics'|'settings'>('overview');
  const [snapshot,setSnapshot]=useState(emptySnapshot);
  const [busy,setBusy]=useState(false);
@@ -40,6 +41,7 @@ export function App({panel=false}:{panel?:boolean}){
   <p className="text-xs leading-relaxed text-muted-foreground">{t.hint}</p>{panel&&<p className="text-xs text-muted-foreground">{t.guide_side}</p>}</>}
   {tab==='settings'&&<section className="rounded-2xl border border-border bg-card p-4 flex flex-col gap-4"><h2 className="flex items-center gap-2 font-medium"><Settings size={17}/>{t.settings}</h2><label className="flex flex-col gap-2 text-sm">{t.theme}<select disabled={!ready} className="rounded-lg border border-border bg-background p-2" value={prefs.theme} onChange={e=>void update({...prefs,theme:e.target.value as Preferences['theme']})}>{(['system','light','dark'] as const).map(key=><option key={key} value={key}>{t[key]}</option>)}</select></label><label className="flex flex-col gap-2 text-sm">{t.language}<select className="rounded-lg border border-border bg-background p-2" value={prefs.language} onChange={e=>void update({...prefs,language:e.target.value as Preferences['language']})}><option value="auto">{t.autoLanguage}</option>{locales.map(locale=><option key={locale} value={locale}>{languageNames[locale]}</option>)}</select></label></section>}
   {notice&&<p role="status" className="text-xs text-primary">{notice}</p>}
+  <Button variant="outline" onClick={()=>void browser.tabs.create({url:browser.runtime.getURL('/sandbox.html')})}>{sandboxWords[locale].open}</Button>
   <footer className="mt-auto flex flex-col gap-2 border-t border-border pt-3 text-xs text-muted-foreground"><p className="flex items-center gap-1"><ShieldCheck size={14}/>{t.privacy}</p><div className="flex justify-between"><button className="flex items-center gap-1" onClick={()=>void browser.tabs.create({url:'https://support.google.com/accounts/'})}>{t.help}<ExternalLink size={12}/></button><button className="flex items-center gap-1" onClick={()=>void browser.tabs.create({url:'https://github.com/hoangsvit/google-verify-toolkit'})}>GitHub<ExternalLink size={12}/></button><span>v{browser.runtime.getManifest().version}</span></div></footer>
  </main>;
 }

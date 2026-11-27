@@ -17,6 +17,10 @@ Detection is heuristic: a method not detected is not necessarily unavailable. Th
 ## Usage
 Open the Google Accounts page, invoke the extension from the browser toolbar, and select Check current page. If an alternative is shown, select it on Google's page. The extension does not click verification controls or decode QR payloads. Side panels use the same on-demand inspection; if access is unavailable after navigation, invoke the toolbar popup again. Badge counts are not account verification status.
 
+## Local verification sandbox
+Click **Open sandbox** in the popup or side panel. This opens an extension-owned page with a fixed fictional QR fixture, simulated SMS/voice options, a reserved fictional phone number and an in-memory mock inbox. Scan the generated QR, select a mock method, enter the six-digit code shown in the simulated inbox, and verify. Codes expire after 120 seconds; resend is available after 30 seconds, and three failed attempts require a resend. Reset or reload clears the demo.
+No backend, network request, real SMS, external QR input, real Google session or authentication is involved. This is a UI/state-machine test fixture, not a production authentication system. The sandbox supports all five UI languages and shared beUI theme preferences.
+
 ## Development
 Requires Node.js 22+ and pnpm 10.
 
